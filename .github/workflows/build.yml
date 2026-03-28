@@ -1,17 +1,41 @@
 name: Build JaxMesh Firmware
 
 on:
-  # Manual trigger with version input
+  # Manual trigger with version + options
   workflow_dispatch:
     inputs:
       firmware_version:
         description: 'Meshtastic firmware version (e.g., v2.7.20)'
         required: true
         type: string
+      announce_module:
+        description: 'Include Announcement Module'
+        required: false
+        type: boolean
+        default: false
+      announce_password:
+        description: 'Announcement Module password (required if module enabled)'
+        required: false
+        type: string
+        default: 'changeme'
+      announce_message:
+        description: 'Default announcement message'
+        required: false
+        type: string
+        default: 'JAXMesh community node. discord.gg/86uf2wTMwq'
+      announce_interval:
+        description: 'Announcement interval in seconds'
+        required: false
+        type: string
+        default: '1800'
 
   # Check for new releases daily
   schedule:
     - cron: '0 6 * * *'  # 6am UTC daily
+
+  # API trigger (from web flasher)
+  repository_dispatch:
+    types: [build-firmware]
 
 jobs:
   check-release:
@@ -19,32 +43,77 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       should_build: ${{ steps.version.outputs.should_build }}
+      config_hash: ${{ steps.version.outputs.config_hash }}
+      announce_module: ${{ steps.version.outputs.announce_module }}
+      announce_password: ${{ steps.version.outputs.announce_password }}
+      announce_message: ${{ steps.version.outputs.announce_message }}
+      announce_interval: ${{ steps.version.outputs.announce_interval }}
+      release_tag: ${{ steps.version.outputs.release_tag }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Determine version
+      - name: Determine version and config
         id: version
         run: |
+          # Parse inputs from workflow_dispatch or repository_dispatch
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ inputs.firmware_version }}"
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "should_build=true" >> $GITHUB_OUTPUT
+            ANNOUNCE="${{ inputs.announce_module }}"
+            ANN_PW="${{ inputs.announce_password }}"
+            ANN_MSG="${{ inputs.announce_message }}"
+            ANN_INT="${{ inputs.announce_interval }}"
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            VERSION="${{ github.event.client_payload.firmware_version }}"
+            ANNOUNCE="${{ github.event.client_payload.announce_module }}"
+            ANN_PW="${{ github.event.client_payload.announce_password }}"
+            ANN_MSG="${{ github.event.client_payload.announce_message }}"
+            ANN_INT="${{ github.event.client_payload.announce_interval }}"
           else
-            # Get latest Meshtastic firmware release
-            LATEST=$(curl -s https://api.github.com/repos/meshtastic/firmware/releases/latest | jq -r .tag_name)
-            echo "Latest Meshtastic release: $LATEST"
-
-            # Check if we already have a release for this version
-            EXISTING=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/tags/jaxmesh-${LATEST}" | jq -r .tag_name)
-            if [ "$EXISTING" = "jaxmesh-${LATEST}" ]; then
-              echo "Already built $LATEST, skipping"
-              echo "should_build=false" >> $GITHUB_OUTPUT
-            else
-              echo "New version $LATEST, building"
-              echo "version=$LATEST" >> $GITHUB_OUTPUT
-              echo "should_build=true" >> $GITHUB_OUTPUT
-            fi
+            # Scheduled: get latest, standard config
+            VERSION=$(curl -s https://api.github.com/repos/meshtastic/firmware/releases/latest | jq -r .tag_name)
+            ANNOUNCE="false"
+            ANN_PW=""
+            ANN_MSG=""
+            ANN_INT=""
           fi
+
+          # Defaults
+          [ -z "$ANNOUNCE" ] && ANNOUNCE="false"
+          [ -z "$ANN_PW" ] && ANN_PW="changeme"
+          [ -z "$ANN_MSG" ] && ANN_MSG="JAXMesh community node. discord.gg/86uf2wTMwq"
+          [ -z "$ANN_INT" ] && ANN_INT="1800"
+
+          echo "Latest version: $VERSION"
+          echo "Announce module: $ANNOUNCE"
+
+          # Build a config hash from the variable inputs
+          CONFIG_STR="announce=${ANNOUNCE}|pw=${ANN_PW}|msg=${ANN_MSG}|int=${ANN_INT}"
+          CONFIG_HASH=$(echo -n "$CONFIG_STR" | sha256sum | cut -c1-8)
+
+          # Standard builds (no announce) use simple tag
+          if [ "$ANNOUNCE" = "false" ]; then
+            RELEASE_TAG="jaxmesh-${VERSION}"
+          else
+            RELEASE_TAG="jaxmesh-${VERSION}-${CONFIG_HASH}"
+          fi
+
+          # Check if this exact config already exists
+          EXISTING=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE_TAG}" | jq -r .tag_name)
+          if [ "$EXISTING" = "${RELEASE_TAG}" ]; then
+            echo "Already built ${RELEASE_TAG}, skipping"
+            echo "should_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "Building ${RELEASE_TAG}"
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "config_hash=$CONFIG_HASH" >> $GITHUB_OUTPUT
+          echo "announce_module=$ANNOUNCE" >> $GITHUB_OUTPUT
+          echo "announce_password=$ANN_PW" >> $GITHUB_OUTPUT
+          echo "announce_message=$ANN_MSG" >> $GITHUB_OUTPUT
+          echo "announce_interval=$ANN_INT" >> $GITHUB_OUTPUT
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
   build:
     needs: check-release
@@ -101,15 +170,45 @@ jobs:
           git submodule update --init --depth 1
 
       - name: Apply JaxMesh configuration
+        env:
+          ANNOUNCE_MODULE: ${{ needs.check-release.outputs.announce_module }}
+          ANNOUNCE_PASSWORD: ${{ needs.check-release.outputs.announce_password }}
+          ANNOUNCE_MESSAGE: ${{ needs.check-release.outputs.announce_message }}
+          ANNOUNCE_INTERVAL: ${{ needs.check-release.outputs.announce_interval }}
         run: |
           cd firmware
           # Copy our userPrefs
           cp ../userPrefs.jsonc .
-          # Apply patches
+
+          # Apply base patches (hop limit, tx power, etc.)
           for patch in ../patches/*.patch; do
+            [ -f "$patch" ] || continue
             echo "Applying $patch..."
             git apply "$patch" || echo "Warning: patch $patch may not apply cleanly"
           done
+
+          # Announcement Module (optional)
+          if [ "$ANNOUNCE_MODULE" = "true" ]; then
+            echo "=== Including Announcement Module ==="
+            cp ../modules/AnnouncementModule.cpp src/modules/
+            cp ../modules/AnnouncementModule.h src/modules/
+
+            # Patch password, message, and interval into the header
+            sed -i "s|#define ANN_PASSWORD.*|#define ANN_PASSWORD \"${ANNOUNCE_PASSWORD}\"|" src/modules/AnnouncementModule.h
+            sed -i "s|#define ANN_DEFAULT_INTERVAL.*|#define ANN_DEFAULT_INTERVAL ${ANNOUNCE_INTERVAL}|" src/modules/AnnouncementModule.h
+
+            # Patch default message into the cpp
+            sed -i "s|JAXMesh is switching to MediumFast.*Update your modem preset to stay connected.|${ANNOUNCE_MESSAGE}|" src/modules/AnnouncementModule.cpp
+
+            # Register the module in the module loader
+            # Add include at top of MeshModule.cpp
+            sed -i '/^#include "modules\/NodeInfoModule.h"/a #include "modules/AnnouncementModule.h"' src/mesh/MeshModule.cpp
+
+            # Add initialization in setupModules()
+            sed -i '/new NodeInfoModule/a\    announcementThread = new AnnouncementModuleThread();' src/mesh/MeshModule.cpp
+
+            echo "Announcement module injected with password and interval"
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -172,12 +271,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: jaxmesh-${{ needs.check-release.outputs.version }}
-          name: "JaxMesh Firmware ${{ needs.check-release.outputs.version }}"
+          tag_name: ${{ needs.check-release.outputs.release_tag }}
+          name: "JaxMesh Firmware ${{ needs.check-release.outputs.version }}${{ needs.check-release.outputs.announce_module == 'true' && ' + Announce Module' || '' }}"
           body: |
             ## JaxMesh Custom Firmware
 
             Based on Meshtastic ${{ needs.check-release.outputs.version }}
+            Config hash: `${{ needs.check-release.outputs.config_hash }}`
 
             ### Defaults
             - **Modem Preset:** MEDIUM_FAST
@@ -186,9 +286,10 @@ jobs:
             - **TX Power:** 30 dBm
             - **Channel 1:** JAXMesh (encrypted)
             - **Event Mode:** Enabled
+            ${{ needs.check-release.outputs.announce_module == 'true' && '- **Announcement Module:** Enabled' || '' }}
 
             ### How to Flash
-            Download the firmware for your device and flash via the [Meshtastic Web Flasher](https://flasher.meshtastic.org) using "Upload" option, or use `esptool.py` / `adafruit-nrfutil` directly.
+            Use [flasher.jaxmesh.com](https://flasher.jaxmesh.com) or download the firmware for your device and flash manually.
 
             Full firmware zip contains all supported devices.
           files: |
