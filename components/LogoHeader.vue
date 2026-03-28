@@ -36,23 +36,33 @@
       class="logo-header-content"
     >
       <div class="logo-container">
-        <div class="logo-glow">
-          <img
-            src="/img/jaxmesh-logo.png"
-            class="logo-icon-jaxmesh"
-            alt="JaxMesh Logo"
-          >
-        </div>
+        <a href="https://jaxmesh.com" target="_blank" class="logo-link">
+          <div class="logo-glow">
+            <img
+              src="/img/jaxmesh-logo.png"
+              class="logo-icon-jaxmesh"
+              alt="JaxMesh Logo"
+            >
+          </div>
+        </a>
       </div>
       <h1 class="logo-title">
-        <span class="logo-title-jaxmesh">JaxMesh Flasher</span>
+        <span class="logo-title-jaxmesh">JaxMesh</span>
+        <span class="logo-title-flasher">Community</span>
+        <span class="logo-title-jaxmesh">Flasher</span>
       </h1>
-      <p class="logo-tagline">Jacksonville Meshtastic Community</p>
-      <p class="logo-tagline-sub">
-        <a href="https://jaxmesh.com" target="_blank" class="jaxmesh-link">jaxmesh.com</a>
-        &nbsp;·&nbsp;
-        <a href="https://discord.gg/86uf2wTMwq" target="_blank" class="jaxmesh-link">Discord</a>
-      </p>
+      <a
+        href="https://discord.gg/86uf2wTMwq"
+        target="_blank"
+        class="discord-cta"
+      >
+        <span class="discord-icon">💬</span>
+        <span class="discord-text">
+          <strong>Join our Discord</strong>
+          <span class="discord-sub">Monthly #MeshMonday meetups · News · Support</span>
+        </span>
+        <span class="discord-arrow">→</span>
+      </a>
     </div>
 
     <!-- Hamcation event branding variant -->
@@ -308,12 +318,30 @@ const { eventMode } = useEventMode()
   }
 }
 
+.logo-link {
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+
+.logo-link:hover {
+  transform: scale(1.05);
+}
+
 .logo-title-jaxmesh {
   background: linear-gradient(135deg, #22c55e 0%, #16a34a 40%, #15803d 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   filter: drop-shadow(0 2px 10px rgba(34, 197, 94, 0.3));
+}
+
+.logo-title-flasher {
+  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 10px rgba(234, 179, 8, 0.2));
+  margin: 0 0.3em;
 }
 
 :root[data-theme="light"] .logo-title-jaxmesh {
@@ -324,19 +352,61 @@ const { eventMode } = useEventMode()
   filter: none;
 }
 
-.logo-tagline-sub {
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
+:root[data-theme="light"] .logo-title-flasher {
+  background: linear-gradient(135deg, #ca8a04, #a16207);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: none;
 }
 
-.jaxmesh-link {
-  color: #22c55e;
+.discord-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #5865F2 0%, #4752C4 100%);
+  border-radius: 12px;
+  color: white;
   text-decoration: none;
-  transition: color 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
 }
 
-.jaxmesh-link:hover {
-  color: #4ade80;
-  text-decoration: underline;
+.discord-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(88, 101, 242, 0.5);
+}
+
+.discord-icon {
+  font-size: 1.5rem;
+}
+
+.discord-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.3;
+}
+
+.discord-text strong {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.discord-sub {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.discord-arrow {
+  font-size: 1.2rem;
+  opacity: 0.7;
+  transition: transform 0.2s;
+}
+
+.discord-cta:hover .discord-arrow {
+  transform: translateX(3px);
 }
 </style>
