@@ -1,0 +1,27 @@
+{
+  // ============================================
+  // JaxMesh Custom Firmware Configuration
+  // Jacksonville, FL Meshtastic Community
+  // https://jaxmesh.com | Discord: discord.gg/86uf2wTMwq
+  // ============================================
+
+  // --- LoRa Settings ---
+  "USERPREFS_CONFIG_LORA_REGION": "meshtastic_Config_LoRaConfig_RegionCode_US",
+  "USERPREFS_LORACONFIG_MODEM_PRESET": "meshtastic_Config_LoRaConfig_ModemPreset_MEDIUM_FAST",
+
+  // --- Channel 0: Default Primary ---
+  // Left as standard Meshtastic default (AQ== key, no name)
+  // Will use MEDIUM_FAST modem preset from LoRa config above
+
+  // --- Channel 1: JAXMesh Private Channel ---
+  "USERPREFS_CHANNEL_1_NAME": "JAXMesh",
+  "USERPREFS_CHANNEL_1_PSK": "{ 0x22, 0x01, 0x91, 0xe1, 0x44, 0xa6, 0x68, 0xa5, 0xb9, 0x74, 0x99, 0x1e, 0x90, 0xb6, 0x0f, 0x93, 0xc8, 0x22, 0x14, 0xf6, 0x21, 0xba, 0xe5, 0x5a, 0xa2, 0x62, 0x51, 0x67, 0x0a, 0x30, 0xc8, 0x13 }",
+  "USERPREFS_CHANNEL_1_PRECISION": "14",
+
+  // --- General Settings ---
+  "USERPREFS_CHANNELS_TO_WRITE": "2",
+  "USERPREFS_EVENT_MODE": "1",
+
+  // --- Timezone ---
+  "USERPREFS_TZ_STRING": "EST5EDT,M3.2.0,M11.1.0                                  "
+}

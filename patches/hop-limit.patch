@@ -1,0 +1,15 @@
+--- a/src/mesh/NodeDB.cpp
++++ b/src/mesh/NodeDB.cpp
+@@ -605,7 +605,11 @@ void NodeDB::installDefaultConfig(bool preserveKey)
+ #else
+     config.lora.modem_preset = meshtastic_Config_LoRaConfig_ModemPreset_LONG_FAST;
+ #endif
+-    config.lora.hop_limit = HOP_RELIABLE;
++    config.lora.hop_limit = 5;
++    config.lora.tx_enabled = true;
++    config.lora.tx_power = 30;
++    config.lora.sx126x_rx_boosted_gain = true;
++
+ #ifdef USERPREFS_CONFIG_LORA_IGNORE_MQTT
+     config.lora.ignore_mqtt = USERPREFS_CONFIG_LORA_IGNORE_MQTT;
+ #else
