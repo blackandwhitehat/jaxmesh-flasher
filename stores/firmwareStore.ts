@@ -665,14 +665,7 @@ export const useFirmwareStore = defineStore('firmware', {
     },
     trackDownload(selectedTarget: DeviceHardware, isCleanInstall: boolean) {
       if (selectedTarget.hwModelSlug?.length > 0) {
-        // Vercel Analytics tracking
-        // track('Download', {
-          hardwareModel: selectedTarget.hwModelSlug,
-          arch: selectedTarget.architecture,
-          cleanInstall: isCleanInstall,
-          version: this.selectedFirmware?.id || '',
-          count: 1,
-        })
+        // Vercel Analytics tracking removed
 
         // Datadog tracking - both RUM and Logs for comprehensive coverage
         if (import.meta.client) {
