@@ -1,67 +1,40 @@
-# JaxMesh Flasher
+[![Vercel](https://img.shields.io/static/v1?label=Powered%20by&message=Vercel&style=flat&logo=vercel&color=000000)](https://vercel.com?utm_source=meshtastic&utm_campaign=oss)
+[![CLA assistant](https://cla-assistant.io/readme/badge/meshtastic/web-flasher)](https://cla-assistant.io/meshtastic/web-flasher)
 
-Custom Meshtastic firmware builds and web flasher for the [Jacksonville Meshtastic Community](https://jaxmesh.com).
+# Meshtastic Web Flasher
 
-## What This Does
+## Introduction
+Welcome to the Meshtastic Web Flasher - a user-friendly, robust tool designed for flashing Meshtastic devices. Leveraging the power of Nuxt/Vue and Tailwind CSS, this web application offers an easy-to-use interface for device flashing.
 
-1. **Builds custom firmware** for every Meshtastic release with JaxMesh defaults baked in
-2. **Supports all devices** the official Meshtastic web flasher supports
-3. **One-click flash** -- plug in your device, visit the flasher, click flash, done
+## Key Features
+- **Espressif's esptool.js Integration**: Incorporates the official JavaScript port of Espressif's esptool for enhanced robustness and compatibility with newer Espressif silicon.
+- **All-in-One Platform Support**: Designed to be a comprehensive solution, supporting a wide range of devices including nRF52 and Pico UF2.
+- **Developer-Friendly Design**: Built with Nuxt/Vue, simplifying the development and maintenance process.
+- **Built-in Serial Monitor**: The built-in Serial Monitor allows debugging and troubleshooting of issues encountered on Meshtastic devices via the native serial logging interface.
 
-## Firmware Defaults
+## Getting Started
+To use the Meshtastic Web Flasher, simply visit [https://flasher.meshtastic.org](https://flasher.meshtastic.org). The website is designed to be intuitive and easy to navigate, allowing you to start flashing your devices right away.
 
-| Setting | Value |
-|---------|-------|
-| Modem Preset | MEDIUM_FAST |
-| Region | US |
-| Hop Limit | 5 |
-| TX Power | 30 dBm |
-| RX Boosted Gain | Enabled |
-| Channel 0 | Default (standard Meshtastic) |
-| Channel 1 | JAXMesh (encrypted, private PSK) |
-| Event Mode | Enabled (locks config on factory reset) |
-| Timezone | EST/EDT |
+## Contributing
+Interested in contributing? Here's how you can get involved:
 
-## How It Works
-
-- GitHub Actions watches for new Meshtastic firmware releases
-- Automatically clones the firmware, applies `userPrefs.jsonc` + patches
-- Builds for ALL supported device targets via PlatformIO
-- Publishes firmware zips as GitHub Releases
-- Web flasher (fork of official Meshtastic flasher) points to our releases
-
-## Two Firmware Variants
-
-- **Standard** -- JaxMesh channel config + settings only
-- **Extended** -- Standard + Announcement Module (from [meshtastic-announce](https://github.com/blackandwhitehat/meshtastic-announce))
-
-## Repository Structure
-
-```
-.github/workflows/
-  build.yml          -- CI: build firmware on new Meshtastic releases
-userPrefs.jsonc      -- JaxMesh firmware defaults
-patches/
-  hop-limit.patch    -- Sets hop_limit to 5 (no USERPREFS override exists)
-  tx-power.patch     -- Sets tx_power to 30 and tx_enabled to true
-flasher/             -- Web flasher fork (future)
-```
-
-## Manual Build
-
+1. Clone this repository.
+2. Make sure to install the dependencies:
 ```bash
-git clone https://github.com/meshtastic/firmware.git
-cd firmware
-git submodule update --init
-cp ../userPrefs.jsonc .
-git apply ../patches/*.patch
-# Build with PlatformIO for your target, e.g.:
-pio run -e heltec-v3
+pnpm install
+```
+3. Start the development server on `http://localhost:3000`:
+```bash
+pnpm run dev
 ```
 
-## Community
+Check out the full Nuxt [deployment documentation](https://nuxt.com/docs/getting-started/deployment#presets) for more information.
 
-- Website: [jaxmesh.com](https://jaxmesh.com)
-- Discord: [discord.gg/86uf2wTMwq](https://discord.gg/86uf2wTMwq)
-- Meetups: First Monday of every month, 7PM at Southern Grounds & Co
-- Operated by [CommsForAll.com](https://commsforall.com)
+## Feedback and Support
+For bug reports, feature requests, or general queries, please open an issue in this repository. Your feedback helps us improve and evolve the Meshtastic Web Flasher.
+
+Thank you for using and supporting the Meshtastic Web Flasher.
+
+## Stats
+
+![Alt](https://repobeats.axiom.co/api/embed/b5590d57a9c3443c86121c36ded22aeb28f709d2.svg "Repobeats analytics image")
