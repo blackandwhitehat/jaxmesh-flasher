@@ -142,7 +142,7 @@
     >
       <div class="container mx-auto px-3 sm:px-5 py-2 sm:py-4 text-center">
         <p class="text-xs sm:text-sm text-theme-muted">
-          <a href="https://jaxmesh.com" class="link-theme">JaxMesh</a> — Jacksonville Meshtastic Community
+          <a href="https://jaxmesh.com" class="link-theme">JaxMesh</a> · Jacksonville Meshtastic Community
           <span class="mx-2 text-theme-muted/50">•</span>
           <a href="https://discord.gg/86uf2wTMwq" class="link-theme">Discord</a>
           <span class="mx-2 text-theme-muted/50">•</span>
