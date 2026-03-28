@@ -1,0 +1,198 @@
+name: Build JaxMesh Firmware
+
+on:
+  # Manual trigger with version input
+  workflow_dispatch:
+    inputs:
+      firmware_version:
+        description: 'Meshtastic firmware version (e.g., v2.7.20)'
+        required: true
+        type: string
+
+  # Check for new releases daily
+  schedule:
+    - cron: '0 6 * * *'  # 6am UTC daily
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      should_build: ${{ steps.version.outputs.should_build }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.firmware_version }}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          else
+            # Get latest Meshtastic firmware release
+            LATEST=$(curl -s https://api.github.com/repos/meshtastic/firmware/releases/latest | jq -r .tag_name)
+            echo "Latest Meshtastic release: $LATEST"
+
+            # Check if we already have a release for this version
+            EXISTING=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/tags/jaxmesh-${LATEST}" | jq -r .tag_name)
+            if [ "$EXISTING" = "jaxmesh-${LATEST}" ]; then
+              echo "Already built $LATEST, skipping"
+              echo "should_build=false" >> $GITHUB_OUTPUT
+            else
+              echo "New version $LATEST, building"
+              echo "version=$LATEST" >> $GITHUB_OUTPUT
+              echo "should_build=true" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+  build:
+    needs: check-release
+    if: needs.check-release.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ESP32 devices
+          - target: heltec-v3
+            arch: esp32
+          - target: heltec-v2
+            arch: esp32
+          - target: heltec-wsl-v3
+            arch: esp32
+          - target: tbeam
+            arch: esp32
+          - target: tbeam-s3-core
+            arch: esp32
+          - target: tlora-v2-1-1_6
+            arch: esp32
+          - target: tlora-t3s3-v1
+            arch: esp32
+          - target: t-deck
+            arch: esp32
+          - target: station-g2
+            arch: esp32
+          - target: nano-g2-ultra
+            arch: esp32
+          - target: tracksenger
+            arch: esp32
+          # nRF52 devices
+          - target: rak4631
+            arch: nrf52
+          - target: t-echo
+            arch: nrf52
+          - target: nano-g1
+            arch: nrf52
+          # RP2040 devices
+          - target: rpipico
+            arch: rp2040
+          - target: senselora-rp2040
+            arch: rp2040
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone Meshtastic firmware
+        run: |
+          git clone --depth 1 --branch ${{ needs.check-release.outputs.version }} \
+            https://github.com/meshtastic/firmware.git firmware
+          cd firmware
+          git submodule update --init --depth 1
+
+      - name: Apply JaxMesh configuration
+        run: |
+          cd firmware
+          # Copy our userPrefs
+          cp ../userPrefs.jsonc .
+          # Apply patches
+          for patch in ../patches/*.patch; do
+            echo "Applying $patch..."
+            git apply "$patch" || echo "Warning: patch $patch may not apply cleanly"
+          done
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build firmware
+        run: |
+          cd firmware
+          pio run -e ${{ matrix.target }}
+
+      - name: Package firmware
+        run: |
+          mkdir -p output
+          cd firmware
+          # Find the built firmware binary
+          FIRMWARE_BIN=$(find .pio/build/${{ matrix.target }} -name "firmware*.bin" -o -name "*.uf2" | head -1)
+          if [ -n "$FIRMWARE_BIN" ]; then
+            cp "$FIRMWARE_BIN" "../output/jaxmesh-${{ matrix.target }}-${{ needs.check-release.outputs.version }}$(echo $FIRMWARE_BIN | grep -o '\.[^.]*$')"
+          fi
+          # Also grab bootloader and partitions if they exist (ESP32)
+          for f in bootloader.bin partitions.bin; do
+            if [ -f ".pio/build/${{ matrix.target }}/$f" ]; then
+              cp ".pio/build/${{ matrix.target }}/$f" "../output/${{ matrix.target }}-$f"
+            fi
+          done
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.target }}
+          path: output/
+
+  release:
+    needs: [check-release, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all firmware artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: firmware-artifacts/
+
+      - name: Create firmware zip
+        run: |
+          mkdir -p release
+          cd firmware-artifacts
+          for dir in */; do
+            cp "$dir"* ../release/ 2>/dev/null || true
+          done
+          cd ../release
+          zip -r ../jaxmesh-firmware-${{ needs.check-release.outputs.version }}.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: jaxmesh-${{ needs.check-release.outputs.version }}
+          name: "JaxMesh Firmware ${{ needs.check-release.outputs.version }}"
+          body: |
+            ## JaxMesh Custom Firmware
+
+            Based on Meshtastic ${{ needs.check-release.outputs.version }}
+
+            ### Defaults
+            - **Modem Preset:** MEDIUM_FAST
+            - **Region:** US
+            - **Hop Limit:** 5
+            - **TX Power:** 30 dBm
+            - **Channel 1:** JAXMesh (encrypted)
+            - **Event Mode:** Enabled
+
+            ### How to Flash
+            Download the firmware for your device and flash via the [Meshtastic Web Flasher](https://flasher.meshtastic.org) using "Upload" option, or use `esptool.py` / `adafruit-nrfutil` directly.
+
+            Full firmware zip contains all supported devices.
+          files: |
+            jaxmesh-firmware-${{ needs.check-release.outputs.version }}.zip
+            release/*
+          draft: false
+          prerelease: false
