@@ -28,6 +28,11 @@ on:
         required: false
         type: string
         default: '1800'
+      announce_enabled:
+        description: 'Start broadcasting immediately on boot (true) or wait for !ann start (false)'
+        required: false
+        type: boolean
+        default: false
 
   # Check for new releases daily
   schedule:
@@ -48,6 +53,7 @@ jobs:
       announce_password: ${{ steps.version.outputs.announce_password }}
       announce_message: ${{ steps.version.outputs.announce_message }}
       announce_interval: ${{ steps.version.outputs.announce_interval }}
+      announce_enabled: ${{ steps.version.outputs.announce_enabled }}
       release_tag: ${{ steps.version.outputs.release_tag }}
     steps:
       - uses: actions/checkout@v4
@@ -62,12 +68,14 @@ jobs:
             ANN_PW="${{ inputs.announce_password }}"
             ANN_MSG="${{ inputs.announce_message }}"
             ANN_INT="${{ inputs.announce_interval }}"
+            ANN_ON="${{ inputs.announce_enabled }}"
           elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
             VERSION="${{ github.event.client_payload.firmware_version }}"
             ANNOUNCE="${{ github.event.client_payload.announce_module }}"
             ANN_PW="${{ github.event.client_payload.announce_password }}"
             ANN_MSG="${{ github.event.client_payload.announce_message }}"
             ANN_INT="${{ github.event.client_payload.announce_interval }}"
+            ANN_ON="${{ github.event.client_payload.announce_enabled }}"
           else
             # Scheduled: get latest, standard config
             VERSION=$(curl -s https://api.github.com/repos/meshtastic/firmware/releases/latest | jq -r .tag_name)
@@ -75,6 +83,7 @@ jobs:
             ANN_PW=""
             ANN_MSG=""
             ANN_INT=""
+            ANN_ON=""
           fi
 
           # Defaults
@@ -82,12 +91,13 @@ jobs:
           [ -z "$ANN_PW" ] && ANN_PW="changeme"
           [ -z "$ANN_MSG" ] && ANN_MSG="JAXMesh community node. discord.gg/86uf2wTMwq"
           [ -z "$ANN_INT" ] && ANN_INT="1800"
+          [ -z "$ANN_ON" ] && ANN_ON="false"
 
           echo "Latest version: $VERSION"
           echo "Announce module: $ANNOUNCE"
 
           # Build a config hash from the variable inputs
-          CONFIG_STR="announce=${ANNOUNCE}|pw=${ANN_PW}|msg=${ANN_MSG}|int=${ANN_INT}"
+          CONFIG_STR="announce=${ANNOUNCE}|pw=${ANN_PW}|msg=${ANN_MSG}|int=${ANN_INT}|on=${ANN_ON}"
           CONFIG_HASH=$(echo -n "$CONFIG_STR" | sha256sum | cut -c1-8)
 
           # Standard builds (no announce) use simple tag
@@ -113,6 +123,7 @@ jobs:
           echo "announce_password=$ANN_PW" >> $GITHUB_OUTPUT
           echo "announce_message=$ANN_MSG" >> $GITHUB_OUTPUT
           echo "announce_interval=$ANN_INT" >> $GITHUB_OUTPUT
+          echo "announce_enabled=$ANN_ON" >> $GITHUB_OUTPUT
           echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
   build:
@@ -175,6 +186,7 @@ jobs:
           ANNOUNCE_PASSWORD: ${{ needs.check-release.outputs.announce_password }}
           ANNOUNCE_MESSAGE: ${{ needs.check-release.outputs.announce_message }}
           ANNOUNCE_INTERVAL: ${{ needs.check-release.outputs.announce_interval }}
+          ANNOUNCE_ENABLED: ${{ needs.check-release.outputs.announce_enabled }}
         run: |
           cd firmware
           # Copy our userPrefs
@@ -199,6 +211,11 @@ jobs:
 
             # Patch default message into the cpp
             sed -i "s|JAXMesh is switching to MediumFast.*Update your modem preset to stay connected.|${ANNOUNCE_MESSAGE}|" src/modules/AnnouncementModule.cpp
+
+            # Patch enabled-on-boot default
+            if [ "$ANNOUNCE_ENABLED" = "true" ]; then
+              sed -i 's/cfg.enabled = false;/cfg.enabled = true;/' src/modules/AnnouncementModule.cpp
+            fi
 
             # Register the module in the module loader
             # Add include at top of MeshModule.cpp
