@@ -131,7 +131,7 @@ import {
   FolderDown,
   Info,
 } from 'lucide-vue-next'
-import { track } from '@vercel/analytics'
+// analytics removed
 import { computed } from 'vue'
 
 import { useDeviceStore } from '../../stores/deviceStore'

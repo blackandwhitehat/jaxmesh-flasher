@@ -1,40 +1,31 @@
-[![Vercel](https://img.shields.io/static/v1?label=Powered%20by&message=Vercel&style=flat&logo=vercel&color=000000)](https://vercel.com?utm_source=meshtastic&utm_campaign=oss)
-[![CLA assistant](https://cla-assistant.io/readme/badge/meshtastic/web-flasher)](https://cla-assistant.io/meshtastic/web-flasher)
+# JaxMesh Flasher
 
-# Meshtastic Web Flasher
+Custom Meshtastic web flasher for the Jacksonville Meshtastic Community.
 
-## Introduction
-Welcome to the Meshtastic Web Flasher - a user-friendly, robust tool designed for flashing Meshtastic devices. Leveraging the power of Nuxt/Vue and Tailwind CSS, this web application offers an easy-to-use interface for device flashing.
+## What's included
 
-## Key Features
-- **Espressif's esptool.js Integration**: Incorporates the official JavaScript port of Espressif's esptool for enhanced robustness and compatibility with newer Espressif silicon.
-- **All-in-One Platform Support**: Designed to be a comprehensive solution, supporting a wide range of devices including nRF52 and Pico UF2.
-- **Developer-Friendly Design**: Built with Nuxt/Vue, simplifying the development and maintenance process.
-- **Built-in Serial Monitor**: The built-in Serial Monitor allows debugging and troubleshooting of issues encountered on Meshtastic devices via the native serial logging interface.
+- **Web flasher UI** — flash your device from the browser at [flasher.jaxmesh.com](https://flasher.jaxmesh.com)
+- **Custom firmware** — pre-configured with JaxMesh settings (MEDIUM_FAST, JAXMesh channel, hop 5, TX 30)
+- **CI pipeline** — auto-builds firmware for all device targets on new Meshtastic releases
 
-## Getting Started
-To use the Meshtastic Web Flasher, simply visit [https://flasher.meshtastic.org](https://flasher.meshtastic.org). The website is designed to be intuitive and easy to navigate, allowing you to start flashing your devices right away.
+## Pre-configured settings
 
-## Contributing
-Interested in contributing? Here's how you can get involved:
+| Setting | Value |
+|---------|-------|
+| Region | US |
+| Modem Preset | MEDIUM_FAST |
+| Channel 0 | Default (standard Meshtastic) |
+| Channel 1 | JAXMesh (private, PSK encrypted) |
+| Hop Limit | 5 |
+| TX Power | 30 dBm |
+| RX Boosted Gain | Enabled |
 
-1. Clone this repository.
-2. Make sure to install the dependencies:
-```bash
-pnpm install
-```
-3. Start the development server on `http://localhost:3000`:
-```bash
-pnpm run dev
-```
+## Community
 
-Check out the full Nuxt [deployment documentation](https://nuxt.com/docs/getting-started/deployment#presets) for more information.
+- Website: [jaxmesh.com](https://jaxmesh.com)
+- Discord: [discord.gg/86uf2wTMwq](https://discord.gg/86uf2wTMwq)
+- Meetups: First Monday, 7PM at Southern Grounds & Co, Jacksonville FL
 
-## Feedback and Support
-For bug reports, feature requests, or general queries, please open an issue in this repository. Your feedback helps us improve and evolve the Meshtastic Web Flasher.
+## Credits
 
-Thank you for using and supporting the Meshtastic Web Flasher.
-
-## Stats
-
-![Alt](https://repobeats.axiom.co/api/embed/b5590d57a9c3443c86121c36ded22aeb28f709d2.svg "Repobeats analytics image")
+Forked from [meshtastic/web-flasher](https://github.com/meshtastic/web-flasher). Meshtastic® is a registered trademark of Meshtastic LLC.

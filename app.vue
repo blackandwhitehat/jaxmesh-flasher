@@ -142,12 +142,11 @@
     >
       <div class="container mx-auto px-3 sm:px-5 py-2 sm:py-4 text-center">
         <p class="text-xs sm:text-sm text-theme-muted">
-          Powered by
-          <a href="https://vercel.com/?utm_source=meshtastic&utm_campaign=oss" class="link-theme">▲ Vercel</a>
+          <a href="https://jaxmesh.com" class="link-theme">JaxMesh</a> — Jacksonville Meshtastic Community
+          <span class="mx-2 text-theme-muted/50">•</span>
+          <a href="https://discord.gg/86uf2wTMwq" class="link-theme">Discord</a>
           <span class="mx-2 text-theme-muted/50">•</span>
           Meshtastic® is a registered trademark of Meshtastic LLC.
-          <span class="mx-2 text-theme-muted/50">•</span>
-          <a href="https://meshtastic.org/docs/legal" class="link-theme">Legal Information</a>
         </p>
       </div>
     </footer>

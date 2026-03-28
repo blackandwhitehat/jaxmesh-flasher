@@ -1,5 +1,2 @@
-import { inject } from '@vercel/analytics'
-
-export default defineNuxtPlugin(() => {
-  inject()
-})
+// Analytics disabled for JaxMesh flasher
+export default defineNuxtPlugin(() => {})

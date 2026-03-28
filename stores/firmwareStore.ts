@@ -18,7 +18,7 @@ import {
 } from '~/types/resources'
 import { getFirmwareBaseUrl } from '~/utils/firmwareUrl'
 
-import { track } from '@vercel/analytics'
+// analytics removed
 import { useSessionStorage } from '@vueuse/core'
 import {
   BlobReader,
@@ -666,7 +666,7 @@ export const useFirmwareStore = defineStore('firmware', {
     trackDownload(selectedTarget: DeviceHardware, isCleanInstall: boolean) {
       if (selectedTarget.hwModelSlug?.length > 0) {
         // Vercel Analytics tracking
-        track('Download', {
+        // track('Download', {
           hardwareModel: selectedTarget.hwModelSlug,
           arch: selectedTarget.architecture,
           cleanInstall: isCleanInstall,
