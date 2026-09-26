@@ -137,7 +137,9 @@ jobs:
           # ESP32 devices
           - target: heltec-v3
             arch: esp32
-          - target: heltec-v2
+          - target: heltec-v2_0
+            arch: esp32
+          - target: heltec-v2_1
             arch: esp32
           - target: heltec-wsl-v3
             arch: esp32
@@ -165,9 +167,11 @@ jobs:
           - target: nano-g1
             arch: nrf52
           # RP2040 devices
-          - target: rpipico
+          - target: pico
             arch: rp2040
-          - target: senselora-rp2040
+          - target: picow
+            arch: rp2040
+          - target: senselora_rp2040
             arch: rp2040
 
     steps:
