@@ -137,7 +137,9 @@ jobs:
           # ESP32 devices
           - target: heltec-v3
             arch: esp32
-          - target: heltec-v2
+          - target: heltec-v2_0
+            arch: esp32
+          - target: heltec-v2_1
             arch: esp32
           - target: heltec-wsl-v3
             arch: esp32
@@ -165,9 +167,11 @@ jobs:
           - target: nano-g1
             arch: nrf52
           # RP2040 devices
-          - target: rpipico
+          - target: pico
             arch: rp2040
-          - target: senselora-rp2040
+          - target: picow
+            arch: rp2040
+          - target: senselora_rp2040
             arch: rp2040
 
     steps:
@@ -197,6 +201,17 @@ jobs:
             [ -f "$patch" ] || continue
             echo "Applying $patch..."
             git apply "$patch" || echo "Warning: patch $patch may not apply cleanly"
+          done
+
+          # Upstream Pico-build fix (meshtastic/firmware#11757 + #11761, on develop
+          # but not yet in any tag): the arduino-pico framework now ships an
+          # "iLabs Hearth" library whose Preferences.h makes PlatformIO's LDF pull
+          # it into every rp2040 build, where it hard-#errors on non-Challenger
+          # boards. Ignore it exactly like upstream does.
+          for f in variants/rp2040/rp2040.ini variants/rp2350/rp2350.ini; do
+            if [ -f "$f" ] && ! grep -q 'iLabs' "$f"; then
+              sed -i 's/^  lvgl$/  lvgl\n  iLabs Hearth/' "$f"
+            fi
           done
 
           # Announcement Module (optional)
