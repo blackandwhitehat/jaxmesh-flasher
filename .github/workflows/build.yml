@@ -203,6 +203,17 @@ jobs:
             git apply "$patch" || echo "Warning: patch $patch may not apply cleanly"
           done
 
+          # Upstream Pico-build fix (meshtastic/firmware#11757 + #11761, on develop
+          # but not yet in any tag): the arduino-pico framework now ships an
+          # "iLabs Hearth" library whose Preferences.h makes PlatformIO's LDF pull
+          # it into every rp2040 build, where it hard-#errors on non-Challenger
+          # boards. Ignore it exactly like upstream does.
+          for f in variants/rp2040/rp2040.ini variants/rp2350/rp2350.ini; do
+            if [ -f "$f" ] && ! grep -q 'iLabs' "$f"; then
+              sed -i 's/^  lvgl$/  lvgl\n  iLabs Hearth/' "$f"
+            fi
+          done
+
           # Announcement Module (optional)
           if [ "$ANNOUNCE_MODULE" = "true" ]; then
             echo "=== Including Announcement Module ==="
